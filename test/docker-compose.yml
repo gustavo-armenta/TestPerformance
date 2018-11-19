@@ -1,0 +1,12 @@
+version: '3.0'
+networks:
+  default:
+    external:
+      name: "nat"
+services:
+  webapp:
+    image: "microsoft/aspnet:4.7.2-windowsservercore-1803"
+    volumes:
+      - c:/test:c:/test
+    ports:
+      - "80:80"
