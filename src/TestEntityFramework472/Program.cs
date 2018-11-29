@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,6 +54,7 @@ namespace TestEntityFramework472
 
         static async Task RunWorker(int[] keys, int workerId)
         {
+            var watch = Stopwatch.StartNew();
             while (true)
             {
                 using (var db = new MyContext())
@@ -63,7 +65,13 @@ namespace TestEntityFramework472
                     {
                         try
                         {
+                            watch.Restart();
                             var blog = await FindAsync(db, keys[i].ToString());
+                            watch.Stop();
+                            if (watch.ElapsedMilliseconds > 1000)
+                            {
+                                Console.WriteLine($"{DateTime.UtcNow.ToString("HH:mm:ss")} {workerId} key={keys[i]} FindAsync={watch.ElapsedMilliseconds}ms");
+                            }
                             if (blog == null)
                             {
                                 Console.WriteLine($"{DateTime.UtcNow.ToString("HH:mm:ss")} {workerId} row not found with key {keys[i]}");
