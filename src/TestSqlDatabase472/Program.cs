@@ -60,7 +60,7 @@ namespace TestSqlDatabase
                         {
                             var command = connection.CreateCommand();
                             command.CommandTimeout = 180;
-                            command.CommandText = "select * from [MySchema].[Blogs] where [Key]='{keys[i]}'";
+                            command.CommandText = $"select * from [MySchema].[Blogs] where [Key]='{keys[i]}'";
                             watch.Restart();
                             using (var reader = await command.ExecuteReaderAsync())
                             {
