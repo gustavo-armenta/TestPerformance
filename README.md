@@ -5,11 +5,11 @@ A 4.7.2 .NET web application with EntityFramework 6.2.0 and SqlAzureExecutionStr
 * Psping shows some delays of 3 seconds because host does not ack the tcp packet and the container has to retransmit.
 * Opening a sql connection can take 3 seconds to complete
 * Opening a sql connection can take 20 seconds to fail with System.ComponentModel.Win32Exception (0x80004005): The semaphore timeout period has expired. We believe SqlConnection.Open() method should be modified to fail fast in less than a second and allow the retry strategy to be useful.
-* A 5MB object is retrieved in less than 1 second using SqlDataReader. The same object can take 60 seconds using LINQ EntityFramework
+* A 1MB object is retrieved in 3 seconds while a 5MB object takes 60 seconds
 
 ## Open Issues in Windows Server 2019-1809
 * Opening a sql connection can take 3 seconds to complete
-* A 5MB object is retrieved in less than 1 second using SqlDataReader. The same object can take 60 seconds using LINQ EntityFramework
+* A 1MB object is retrieved in 3 seconds while a 5MB object takes 60 seconds
 
 ## About the repro test utilities
 * TestEntityFramework472 creates the database schema, tables, and rows
