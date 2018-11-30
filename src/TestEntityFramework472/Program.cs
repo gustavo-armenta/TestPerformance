@@ -83,7 +83,7 @@ namespace TestEntityFramework472
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"{DateTime.UtcNow.ToString("HH:mm:ss")} {workerId} key={keys[i]}. {ex}");
+                            Console.WriteLine($"{DateTime.UtcNow.ToString("HH:mm:ss")} {workerId} key={keys[i]}. failed to get blog. {ex}");
                         }
                     }
                 }
@@ -92,7 +92,6 @@ namespace TestEntityFramework472
 
         static async Task<Blog> FindAsync(MyContext db, string key)
         {
-            var effectiveDateUtc = DateTime.UtcNow;
             var blog = await db.Blogs.AsNoTracking()
                             .Where(s => s.Key == key)
                             .FirstOrDefaultAsync();
