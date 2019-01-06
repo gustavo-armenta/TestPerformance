@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,6 +14,7 @@ namespace TestSqlDatabase
         {
             int duration = int.Parse(ConfigurationManager.AppSettings["duration"]);
             int max_workers = int.Parse(ConfigurationManager.AppSettings["max_workers"]);
+            CreateCredential();
             string[] stringKeys = ConfigurationManager.AppSettings["keys"].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             int[] keys = new int[stringKeys.Length];
             for (int i = 0; i < keys.Length; i++)
@@ -30,6 +32,30 @@ namespace TestSqlDatabase
             Console.WriteLine("Stopping the test");
         }
 
+        static SqlCredential _credential;
+        static SqlCredential CreateCredential()
+        {
+            if (_credential != null)
+            {
+                return _credential;
+            }
+
+            var secureString = new SecureString();
+            foreach (var c in ConfigurationManager.AppSettings["password"])
+            {
+                secureString.AppendChar(c);
+            }
+            secureString.MakeReadOnly();
+            var credential = new SqlCredential(ConfigurationManager.AppSettings["username"], secureString);
+            bool cache_credentials = bool.Parse(ConfigurationManager.AppSettings["cache_credentials"]);
+            if (cache_credentials && _credential == null)
+            {
+                _credential = credential;
+            }
+
+            return credential;
+        }
+
         static async Task RunWorker(int[] keys, int workerId)
         {
             var connectionString = ConfigurationManager.ConnectionStrings["MyContext"].ConnectionString;
@@ -37,7 +63,7 @@ namespace TestSqlDatabase
             while (true)
             {
                 Console.WriteLine($"{DateTime.UtcNow.ToString("HH:mm:ss")} workerId={workerId} started");
-                using (var connection = new SqlConnection(connectionString))
+                using (var connection = new SqlConnection(connectionString, CreateCredential()))
                 {
                     try
                     {

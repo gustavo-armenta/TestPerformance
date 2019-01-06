@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Configuration;
 using System.Data.Entity;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,7 +13,7 @@ namespace TestEntityFramework472
     class Program
     {
         static void Main(string[] args)
-        {
+        {            
             int duration = int.Parse(ConfigurationManager.AppSettings["duration"]);
             int max_workers = int.Parse(ConfigurationManager.AppSettings["max_workers"]);
             string[] stringKeys = ConfigurationManager.AppSettings["keys"].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -22,6 +24,7 @@ namespace TestEntityFramework472
             }
 
             RunSetup(keys).GetAwaiter().GetResult();
+            Database.SetInitializer<MyContext>(null);
             int workerId = 0;
             for (int i = 0; i < max_workers; i++)
             {
@@ -32,9 +35,34 @@ namespace TestEntityFramework472
             Console.WriteLine("Stopping the test");
         }
 
+        static SqlCredential _credential;
+        static SqlCredential CreateCredential()
+        {
+            if (_credential != null)
+            {
+                return _credential;
+            }
+
+            var secureString = new SecureString();
+            foreach (var c in ConfigurationManager.AppSettings["password"])
+            {
+                secureString.AppendChar(c);
+            }
+            secureString.MakeReadOnly();
+            var credential = new SqlCredential(ConfigurationManager.AppSettings["username"], secureString);
+            bool cache_credentials = bool.Parse(ConfigurationManager.AppSettings["cache_credentials"]);
+            if (cache_credentials && _credential == null)
+            {
+                _credential = credential;
+            }
+
+            return credential;
+        }
+
         static async Task RunSetup(int[] keys)
         {
-            using (var db = new MyContext())
+            var connectionString = ConfigurationManager.ConnectionStrings["MyContext"].ConnectionString;
+            using (var db = new MyContext(new SqlConnection(connectionString, CreateCredential()), true))
             {
                 db.Database.CommandTimeout = 180;
                 for (int i = 0; i < keys.Length; i++)
@@ -54,10 +82,11 @@ namespace TestEntityFramework472
 
         static async Task RunWorker(int[] keys, int workerId)
         {
+            var connectionString = ConfigurationManager.ConnectionStrings["MyContext"].ConnectionString;
             var watch = Stopwatch.StartNew();
             while (true)
             {
-                using (var db = new MyContext())
+                using (var db = new MyContext(new SqlConnection(connectionString, CreateCredential()), true))
                 {
                     db.Database.CommandTimeout = 180;
                     Console.WriteLine($"{DateTime.UtcNow.ToString("HH:mm:ss")} {workerId} started");
